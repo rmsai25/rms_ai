@@ -1,0 +1,41 @@
+# Node modules
+node_modules/
+UITest/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.npmrc
+credentials.json
+faq_data.txt
+notes.txt
+requirements_pip.txt
+requirements.txt
+sales_team_call_summary.csv
+token.json
+voiceProcess.json
+wa_2mb_hindi.mpeg
+speechmatics.txtspeechmatics_raw.json
+config.py
+index_old.js
+voiceDemo.py
+.wwebjs_auth
+.wwebjs_cache
+.npmrc
+
+# Build output
+dist/
+build/
+log_wa.exe
+
+# OS-specific files
+.DS_Store
+Thumbs.db
