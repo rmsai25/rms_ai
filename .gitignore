@@ -35,6 +35,15 @@ voiceDemo.py
 dist/
 build/
 log_wa.exe
+__pycache__/
+Enlish_sagarika.aac
+Eng_tenant_visit.mpeg
+song.mp3
+sagarika2.aac
+pod
+gmailtoken.json
+credentials.json
+venv
 
 # OS-specific files
 .DS_Store

@@ -1,4 +1,8 @@
 from pymongo import MongoClient
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from utils.load_env import load_env
 def generate_summaries(transcript):
     openAI_summary = ""
     hugging_summary = ""
@@ -120,3 +124,43 @@ def generate_summaries(transcript):
 # db = mongo_client["testing"]
 # col = db["testing_knowledge_base"]
 # col.insert_one({"summary": summary})
+
+def summary(full_transcript):
+
+
+
+    try:
+        print("\n📄 Generating summary using Mistral AI...")
+        import requests
+        api_key = f"{load_env("MISTRAL_KEY")}"
+        headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+        data = {
+            "model": "mistral-small",
+            "messages": [
+                {"role": "system", "content": "You are a concise email summarizer. Generate a short, clean summary  focusing on key actions, dates, and decisions. Remove greetings, signatures, and disclaimers. Use plain text without extra spaces or symbols."},
+                {"role": "user", "content": full_transcript}
+            ],
+            "temperature": 0.3,
+            "max_tokens": 400
+        }
+        response = requests.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data)
+        result = response.json()
+        mistral_summary = result["choices"][0]["message"]["content"].strip()
+        return mistral_summary
+    except Exception as e:
+        mistral_summary = f"❌ Mistral error: {str(e)}"
+        return mistral_summary
+
+
+
+# data=summary("hey give the summmary -> Dear Customer, Thank you for banking with State Bank of India. The NEFT transaction originated by you has been credited to Beneficiary at Beneficiary Bank and the details are given below. UTR No.: SBIN325213843387 Date: 01/08/2025 Credited to Beneficiary Name: Chitra Sivakumar Beneficiary A/c No.: XX9516 Bank IFSC: CNRB0002673 Amount Credited: INR 14,300.00 On (Date): 01/08/2025 At (Time): 05:41 AM")
+# print(f"summary{data}")
+# data=summary("""Hi All,
+
+# Electricity bill for the month was 717 and 1500 was deducted from my deposit , can you please check and refund the pending amounts.
+
+# I have attached electricity bill collected from the owner.
+
+# Let me know if any questions
+# """)
+# print(data)

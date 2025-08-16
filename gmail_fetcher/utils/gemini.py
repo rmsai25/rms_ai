@@ -1,10 +1,17 @@
 import google.generativeai as genai
+import os 
+import sys
+from load_env import load_env
+
+# Pre-load keys when imported
+# keys = load_env("GEMINI_KEY")
+# print (f"key {keys}")
 
 def gemini(prompt):
     try:
         # print(f"")
-        genai.configure(api_key="")
-        model=genai.GenerativeModel("gemini-5.5-flash")
+        genai.configure(api_key=f"{load_env("GEMINI_KEY")}")
+        model=genai.GenerativeModel("gemini-1.5-flash")
         response=model.generate_content(prompt)
 
         return response.text.strip()
@@ -12,23 +19,24 @@ def gemini(prompt):
         
         return e
 
+# ans=gemini("hey give the top 2 news today ")
+# print(f"answer  {ans}")
 
 from huggingface_hub import InferenceClient
 
-def hugging_face_qa(question):
-    client = InferenceClient()
-    
-    response = client.conversational(
-        inputs={
-            "text": question,
-            "parameters": {
-                "max_new_tokens": 100
-            }
-        },
-        model="deepseek-ai/DeepSeek-V3-0324"
-    )
-    return response["generated_text"]
+client = InferenceClient(api_key=f"{load_env("HUGGINGFACE_KEY")}")
 
-question = "What is 5 + 1 and also give step by step explanation?"
-answer = hugging_face_qa(question)
+def hugging_face_qa(question):
+    completion = client.chat.completions.create(
+        model="HuggingFaceH4/zephyr-7b-beta",   # ✅ use a supported chat model
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": question},
+        ],
+    )
+    return completion.choices[0].message["content"]
+
+question = "What is the capital of France?"
+answer = gemini(question)
+print(answer)
 print(f"Answer: {answer}")

@@ -6,7 +6,7 @@ from config.connection import connection
 app = Flask(__name__)
 CORS(app)  
 db=connection()
-collection = db["emails"]
+collection = db["email_data"]
 @app.route('/get_mail_by_sender/<sender>', methods=['GET'])
 def get_emails_by_sender(sender):
     documents = collection.find({"sender":sender})

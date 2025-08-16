@@ -11,18 +11,18 @@ import re
 from datetime import datetime, timedelta, timezone as dt_timezone
 from config.connection import connection
 from config.email_summary import generate_summaries
-
+from config.email_summary import summary
+from utils.cleaning_mail import html_to_text
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+from sentence_transformers import SentenceTransformer
 CREDENTIALS_PATH = os.path.join(BASE_DIR, 'credentials.json')
 # === CONFIG ===
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
-# MONGO_URI = "mongodb+srv://sahuprabhat2020:pksrentmystay@cluster0.ygo0sjl.mongodb.net/?retryWrites=true&w=majority&tls=true&appName=Cluster0"
-# client = MongoClient(MONGO_URI)
-# db = client["gmail_data"]
 db = connection()
-connection = db["emails"]
+connection = db["emails_data"]
 TOKEN_PATH = os.path.join(BASE_DIR, 'gmailtoken.json')
+embedder = SentenceTransformer('all-MiniLM-L6-v2')
 def gmail_authenticate():
     creds = None
     if os.path.exists(TOKEN_PATH):
@@ -101,13 +101,17 @@ def get_emails(service, query=""):
                     formatted_date = date_str
 
                 body = extract_email_body(payload)
-                content=f"hey ignore the all thing you just find the booking id return only booking id number nothing extra aslo space . {body}"
+                content=f"{body}"
                 snippet = msg_data.get('snippet', '')[:200]
                 msgid = msg_data.get('id')
                 thread_id = msg_data.get('threadId')
+                body=html_to_text(body)
                 # summary=generate_summaries(content)
-             
+                summaries = summary(body)
+
+                query_vector = embedder.encode(summaries).tolist()
                 # print(f"Booking id : {summary}")
+
                 # exit(1)
                 emails.append({
                     "subject": subject,
@@ -117,8 +121,8 @@ def get_emails(service, query=""):
                     "snippet": snippet,
                     "msgid": msgid,
                     "thread_id": thread_id,
-                   
-                  
+                    "summary":summaries,
+                    "embbeding":query_vector
                 })
             except Exception as e:
                 print(f"Error processing message {msg['id']}: {str(e)}")
@@ -139,16 +143,17 @@ if __name__ == '__main__':
     ist = timezone('Asia/Kolkata')
     now_ist = utc_now.astimezone(ist)
     one_day_ago_ist = now_ist - timedelta(days=24)
-    thirty_days_ago_ist = now_ist - timedelta(days=1)
+    thirty_days_ago_ist = now_ist - timedelta(days=3)
 
     after_timestamp = int(thirty_days_ago_ist.timestamp())
     before_timestamp = int(now_ist.timestamp())
 
     print("🕒 Fetching emails from:", thirty_days_ago_ist.strftime('%Y-%m-%d %H:%M:%S'), "to", now_ist.strftime('%Y-%m-%d %H:%M:%S'))
 
-    # query = f"from: kiran@rentmystay.com subject(testing email) after:{after_timestamp} before:{before_timestamp} (in:inbox OR in:sent)"
+    # query = f"subject(testing email) after:{after_timestamp} before:{before_timestamp} (in:inbox OR in:sent)"
     # query=f"from:(kiran@rentmystay.com) subject:(testing email) after:2025/8/4 before:2025/8/7"
-    query = "from:(kiran@rentmystay.com) subject:(test email) is:important after:2025/8/4 before:2025/8/7"
+    # query = "from:(kiran@rentmystay.com) subject:(test email) is:important after:2025/8/4 before:2025/8/7"
+    query = f"after:{after_timestamp} before:{before_timestamp} (in:inbox OR in:sent)"
 
     print(query)
     # exit(1)
@@ -158,6 +163,6 @@ if __name__ == '__main__':
         print(f"\n--- {email['subject']} from {email['sender']} on {email['date']}")
         print(f"Snippet: {email['snippet']}")
         print(f"Body: {email['body'][:200]}...\n")
-        # connection.insert_one(email)
-
+        connection.insert_one(email)
+    # print(f"mail content {emails}")
     print(f"✅ {len(emails)} email(s) saved to MongoDB.")
